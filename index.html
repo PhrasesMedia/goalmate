@@ -1,0 +1,1673 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Goal Trophies</title>
+  <meta name="description" content="A personal goal trophy system with manual tick + optional auto unlocks, saved locally." />
+  <style>
+    :root{
+      --bg0:#070b12;
+      --bg1:#0a1322;
+      --text:#eaf0ff;
+      --muted:#b7c6ea;
+      --muted2:#92a4cf;
+      --card: rgba(255,255,255,.06);
+      --border: rgba(255,255,255,.12);
+      --shadow: 0 18px 55px rgba(0,0,0,.50);
+      --accent: rgba(140,200,255,.55);
+      --accent2: rgba(255,210,120,.55);
+      --good: rgba(125,255,205,.65);
+      --warn: rgba(255,185,110,.70);
+      --bad: rgba(255,120,140,.70);
+
+      --brz:#c9855a;
+      --sil:#c9d4ea;
+      --gol:#ffd36e;
+      --pla:#a78bff;
+
+      --r: 16px;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        radial-gradient(1200px 700px at 20% 10%, rgba(140,200,255,.10), transparent 55%),
+        radial-gradient(900px 600px at 80% 0%, rgba(255,210,120,.10), transparent 55%),
+        radial-gradient(1000px 800px at 60% 100%, rgba(167,139,255,.10), transparent 60%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow-x:hidden;
+    }
+
+    a{color:inherit}
+    button, input, select, textarea {font-family: inherit}
+
+    .wrap{max-width:1100px; margin:0 auto; padding:18px 16px 64px}
+    header{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      margin:10px 0 14px;
+    }
+    .brand{display:flex; align-items:center; gap:12px; min-width: 260px;}
+    .logo{
+      width:44px; height:44px; border-radius:12px;
+      background:
+        radial-gradient(18px 18px at 30% 30%, rgba(255,255,255,.22), transparent 60%),
+        radial-gradient(24px 24px at 70% 70%, rgba(0,0,0,.35), transparent 62%),
+        linear-gradient(135deg, rgba(140,200,255,.55), rgba(255,210,120,.40));
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow: var(--shadow);
+      flex:0 0 auto;
+    }
+    h1{font-size:18px; margin:0}
+    .sub{color:var(--muted); font-size:13px; margin-top:2px}
+    .topActions{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end}
+    .pill{
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      color: var(--muted);
+      font-size:12px;
+      display:flex; gap:8px; align-items:center;
+    }
+    .pill strong{color:var(--text); font-weight:700}
+    .btn{
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      padding:10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      transition: transform .08s ease, border-color .12s ease, background .12s ease;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .btn:hover{transform: translateY(-1px); border-color: rgba(255,255,255,.22); background: rgba(255,255,255,.08)}
+    .btn:active{transform: translateY(0px)}
+    .btn.primary{
+      border-color: rgba(140,200,255,.35);
+      background: linear-gradient(180deg, rgba(140,200,255,.14), rgba(140,200,255,.05));
+    }
+    .btn.warn{
+      border-color: rgba(255,185,110,.35);
+      background: linear-gradient(180deg, rgba(255,185,110,.14), rgba(255,185,110,.05));
+    }
+    .btn.danger{
+      border-color: rgba(255,120,140,.35);
+      background: linear-gradient(180deg, rgba(255,120,140,.14), rgba(255,120,140,.05));
+    }
+    .btn.ghost{
+      border-color: rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:14px;
+      margin-top: 12px;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns: 1fr; }
+      .brand{min-width:auto}
+      .topActions{justify-content:flex-start}
+    }
+
+    .card{
+      border:1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .cardHead{
+      padding:12px 12px 10px;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.12);
+    }
+    .cardHead h2{margin:0; font-size:14px; letter-spacing: .2px;}
+    .hint{color:var(--muted); font-size:12px; margin-top:4px; line-height:1.25}
+    .cardBody{padding:12px}
+
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .row > * {flex: 1 1 auto}
+
+    .field{
+      display:flex; flex-direction:column; gap:6px;
+      min-width: 160px;
+    }
+    label{font-size:12px; color:var(--muted)}
+    input[type="text"], input[type="number"], select, textarea{
+      padding:10px 12px;
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      outline:none;
+    }
+    input[type="text"]::placeholder{color: rgba(183,198,234,.55)}
+    .small{font-size:12px; color:var(--muted)}
+    .sep{height:1px; background: rgba(255,255,255,.08); margin:12px 0}
+
+    .goalTabs{
+      display:flex; gap:8px; flex-wrap:wrap;
+      padding:10px 10px 0;
+    }
+    .tab{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      color: var(--muted);
+      padding:8px 10px;
+      border-radius: 999px;
+      cursor:pointer;
+      font-size:12px;
+      display:flex; gap:8px; align-items:center;
+    }
+    .tab.active{
+      color: var(--text);
+      border-color: rgba(140,200,255,.28);
+      background: rgba(140,200,255,.10);
+    }
+    .badge{
+      font-size:11px;
+      padding:3px 8px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.12);
+      color: var(--muted);
+      background: rgba(0,0,0,.18);
+    }
+
+    .trophyMeta{
+      display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+      justify-content:flex-end;
+      color: var(--muted);
+      font-size:12px;
+    }
+
+    .trophyList{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap:10px;
+      margin-top:10px;
+    }
+    @media (max-width: 700px){
+      .trophyList{grid-template-columns: 1fr}
+    }
+
+    .trophy{
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      background: rgba(0,0,0,.16);
+      padding:10px;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      position:relative;
+      overflow:hidden;
+    }
+    .trophy::before{
+      content:"";
+      position:absolute; inset:-40px -40px auto auto;
+      width:120px; height:120px;
+      transform: rotate(25deg);
+      background: radial-gradient(closest-side, rgba(255,255,255,.10), transparent 70%);
+      pointer-events:none;
+      opacity:.6;
+    }
+
+    .icon{
+      width:42px; height:42px; border-radius: 14px;
+      border:1px solid rgba(255,255,255,.16);
+      background:
+        radial-gradient(14px 14px at 30% 30%, rgba(255,255,255,.18), transparent 65%),
+        radial-gradient(20px 20px at 70% 70%, rgba(0,0,0,.35), transparent 62%),
+        linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+      display:flex; align-items:center; justify-content:center;
+      flex: 0 0 auto;
+      box-shadow: 0 12px 30px rgba(0,0,0,.35);
+      overflow:hidden;
+    }
+
+    .trophyImg{
+      width:30px;
+      height:30px;
+      object-fit:contain;
+      filter: drop-shadow(0 6px 12px rgba(0,0,0,.45));
+      pointer-events:none;
+      user-select:none;
+    }
+
+    .toggle{display:flex; align-items:center; gap:8px; user-select:none;}
+    .check{
+      width:42px; height:26px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.20);
+      position:relative;
+      cursor:pointer;
+      flex: 0 0 auto;
+    }
+    .knob{
+      width:22px; height:22px; border-radius:999px;
+      position:absolute; top:50%; transform: translateY(-50%);
+      left:2px;
+      background: rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow: 0 10px 22px rgba(0,0,0,.45);
+      transition: left .14s ease, background .14s ease, border-color .14s ease;
+    }
+    .check.on{border-color: rgba(125,255,205,.30); background: rgba(125,255,205,.08);}
+    .check.on .knob{
+      left:18px;
+      background: rgba(125,255,205,.30);
+      border-color: rgba(125,255,205,.30);
+    }
+
+    .locked{opacity: .85;}
+    .locked .icon{filter: grayscale(1); opacity:.85;}
+
+    .hiddenMask{
+      display:inline-block;
+      max-width: 100%;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .tMain{min-width:0; flex:1}
+    .tTitle{
+      display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+      font-weight:700;
+      font-size:13px;
+    }
+    .tDesc{margin-top:4px; color:var(--muted); font-size:12px; line-height:1.25}
+    .tFoot{
+      margin-top:8px;
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
+      flex-wrap:wrap;
+    }
+    .tTags{display:flex; gap:6px; flex-wrap:wrap; align-items:center}
+    .tag{
+      font-size:11px;
+      padding:3px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      color: var(--muted);
+      background: rgba(255,255,255,.04);
+    }
+    .tag.auto{border-color: rgba(125,255,205,.25); background: rgba(125,255,205,.06)}
+    .tag.manual{border-color: rgba(255,210,120,.25); background: rgba(255,210,120,.06)}
+    .tag.hidden{border-color: rgba(167,139,255,.28); background: rgba(167,139,255,.07)}
+    .tag.date{border-color: rgba(140,200,255,.25); background: rgba(140,200,255,.06)}
+
+    .sideList{display:flex; flex-direction:column; gap:10px;}
+    .statGrid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap:10px;
+    }
+    .stat{
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      background: rgba(0,0,0,.16);
+      padding:10px;
+    }
+    .stat .k{font-size:11px; color:var(--muted)}
+    .stat .v{font-size:16px; font-weight:800; margin-top:4px}
+
+    .progress{
+      margin-top:10px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.16);
+      border-radius: 999px;
+      height:12px;
+      overflow:hidden;
+    }
+    .bar{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, rgba(140,200,255,.55), rgba(255,210,120,.45), rgba(167,139,255,.50));
+    }
+
+    .recent{
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      background: rgba(0,0,0,.16);
+      padding:10px;
+    }
+    .recent h3{margin:0; font-size:13px}
+    .recentList{margin-top:8px; display:flex; flex-direction:column; gap:8px}
+    .recentItem{
+      display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      padding:8px 10px;
+      border-radius: 12px;
+    }
+    .recentItem .l{min-width:0}
+    .recentItem .t{font-weight:700; font-size:12px}
+    .recentItem .d{color:var(--muted); font-size:11px; margin-top:2px}
+    .recentItem .r{color:var(--muted2); font-size:11px; white-space:nowrap; flex:0 0 auto}
+
+    .toastWrap{
+      position: fixed;
+      left: 0; right: 0; bottom: 18px;
+      display:flex;
+      justify-content:center;
+      pointer-events:none;
+      z-index: 9999;
+    }
+    .toast{
+      width:min(560px, calc(100% - 24px));
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.18);
+      background:
+        radial-gradient(120px 120px at 12% 30%, rgba(255,255,255,.08), transparent 60%),
+        linear-gradient(180deg, rgba(0,0,0,.58), rgba(0,0,0,.28));
+      box-shadow: 0 30px 90px rgba(0,0,0,.65);
+      padding: 12px;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      transform: translateY(18px);
+      opacity:0;
+      transition: transform .20s ease, opacity .20s ease;
+      pointer-events:none;
+    }
+    .toast.show{transform: translateY(0px); opacity:1}
+    .toastIcon{
+      width:52px; height:52px; border-radius: 18px;
+      border:1px solid rgba(255,255,255,.18);
+      background:
+        radial-gradient(18px 18px at 30% 30%, rgba(255,255,255,.18), transparent 65%),
+        radial-gradient(26px 26px at 70% 70%, rgba(0,0,0,.35), transparent 62%),
+        linear-gradient(135deg, rgba(140,200,255,.28), rgba(255,210,120,.18));
+      display:flex; align-items:center; justify-content:center;
+      flex:0 0 auto;
+      overflow:hidden;
+    }
+    .toastTitle{font-weight:900; letter-spacing:.2px; font-size:13px}
+    .toastDesc{color:var(--muted); font-size:12px; margin-top:3px; line-height:1.2}
+    .toastTier{
+      margin-left:auto;
+      font-size:11px;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      white-space:nowrap;
+    }
+
+    .modalOverlay{
+      position: fixed; inset:0;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 16px;
+      z-index: 10000;
+    }
+    .modalOverlay.show{display:flex}
+    .modal{
+      width: min(920px, 100%);
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.18);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+      box-shadow: 0 30px 90px rgba(0,0,0,.65);
+      overflow:hidden;
+    }
+    .modalHead{
+      padding:12px 12px 10px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.14);
+    }
+    .modalHead h3{margin:0; font-size:14px}
+    .modalBody{padding:12px}
+    .modalFoot{
+      padding:12px;
+      display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;
+      border-top:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.10);
+    }
+    .kbd{
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      color: var(--muted);
+    }
+
+    .manageGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width: 860px){
+      .manageGrid{grid-template-columns: 1fr;}
+    }
+    .miniCard{
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      background: rgba(0,0,0,.14);
+      padding:10px;
+    }
+    .list{
+      display:flex; flex-direction:column; gap:8px;
+      margin-top:8px;
+    }
+    .listItem{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      padding:10px;
+      border-radius: 14px;
+      display:flex;
+      gap:10px;
+      justify-content:space-between;
+      align-items:flex-start;
+    }
+    .listItem .meta{min-width:0}
+    .listItem .title{font-weight:800; font-size:12px}
+    .listItem .subline{color:var(--muted); font-size:11px; margin-top:2px; line-height:1.25}
+    .listItem .actions{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end}
+    .chip{
+      font-size:11px;
+      padding:3px 8px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      color: var(--muted);
+      display:inline-flex;
+      gap:6px;
+      align-items:center;
+      margin-left:6px;
+      white-space:nowrap;
+    }
+    .pillWarn{
+      border-color: rgba(255,185,110,.35);
+      background: rgba(255,185,110,.08);
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>Goal Trophies</h1>
+          <div class="sub">Manual tick + optional auto unlocks • saved locally</div>
+        </div>
+      </div>
+
+      <div class="topActions">
+        <div class="pill" title="Local-only. Nothing is uploaded.">
+          <span>Save:</span> <strong>Local</strong>
+        </div>
+        <button class="btn ghost" id="btnManage">Manage Goals</button>
+        <button class="btn primary" id="btnExport">Export</button>
+        <button class="btn" id="btnImport">Import</button>
+        <button class="btn warn" id="btnDemo">Reset to Demo</button>
+        <button class="btn danger" id="btnWipe">Wipe All</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <div class="cardHead">
+          <div>
+            <h2 id="goalTitle">Trophies</h2>
+            <div class="hint" id="goalHint">Pick a goal. Tick trophies manually, or log actions for auto unlocks.</div>
+          </div>
+          <div class="trophyMeta">
+            <span class="badge" id="goalCompletion">0%</span>
+            <span class="badge" id="goalCounts">0 / 0</span>
+          </div>
+        </div>
+
+        <div class="goalTabs" id="goalTabs"></div>
+
+        <div class="cardBody">
+          <div class="row">
+            <div class="field" style="min-width:220px">
+              <label for="viewMode">View</label>
+              <select id="viewMode">
+                <option value="all">All trophies</option>
+                <option value="locked">Locked only</option>
+                <option value="unlocked">Unlocked only</option>
+              </select>
+            </div>
+
+            <div class="field" style="min-width:220px">
+              <label for="sortMode">Sort</label>
+              <select id="sortMode">
+                <option value="tier">Tier → Title</option>
+                <option value="title">Title A–Z</option>
+                <option value="recent">Most recently unlocked</option>
+              </select>
+            </div>
+
+            <div class="field" style="min-width:220px">
+              <label for="searchBox">Search</label>
+              <input id="searchBox" type="text" placeholder="Search trophies..." />
+            </div>
+          </div>
+
+          <div class="sep"></div>
+
+          <div class="trophyList" id="trophyList"></div>
+        </div>
+      </section>
+
+      <aside class="sideList">
+        <section class="card">
+          <div class="cardHead">
+            <div>
+              <h2>Overview</h2>
+              <div class="hint">Your totals across all goals.</div>
+            </div>
+            <div class="trophyMeta">
+              <span class="badge" id="soundBadge">Sound: Off</span>
+            </div>
+          </div>
+          <div class="cardBody">
+            <div class="statGrid">
+              <div class="stat">
+                <div class="k">Total unlocked</div>
+                <div class="v" id="statUnlocked">0</div>
+              </div>
+              <div class="stat">
+                <div class="k">Total trophies</div>
+                <div class="v" id="statTotal">0</div>
+              </div>
+              <div class="stat">
+                <div class="k">Platinums</div>
+                <div class="v" id="statPlat">0</div>
+              </div>
+              <div class="stat">
+                <div class="k">Completion</div>
+                <div class="v" id="statPct">0%</div>
+              </div>
+            </div>
+
+            <div class="progress" aria-label="Overall completion">
+              <div class="bar" id="overallBar"></div>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="row" style="align-items:center">
+              <button class="btn" id="btnToggleSound">Toggle sound</button>
+              <div class="small">
+                Tip: manual tick is always allowed. Auto unlocks are optional.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="cardHead">
+            <div>
+              <h2>Log an action (optional)</h2>
+              <div class="hint">Logging can auto-unlock trophies that have rules. Manual tick still works.</div>
+            </div>
+          </div>
+          <div class="cardBody">
+            <div class="row">
+              <div class="field">
+                <label for="actionType">Action type</label>
+                <select id="actionType"></select>
+              </div>
+              <div class="field">
+                <label for="actionValue">Value</label>
+                <input id="actionValue" type="number" min="1" step="1" value="1" />
+              </div>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn primary" id="btnAddAction">Add action</button>
+              <button class="btn" id="btnQuick1">Quick +1</button>
+              <button class="btn" id="btnClearActions">Clear action history</button>
+            </div>
+            <div class="small" style="margin-top:10px">
+              Action history is stored locally and used to evaluate auto rules.
+            </div>
+          </div>
+        </section>
+
+        <section class="recent">
+          <h3>Recent unlocks</h3>
+          <div class="recentList" id="recentList"></div>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <div class="toastWrap" aria-live="polite" aria-atomic="true">
+    <div class="toast" id="toast">
+      <div class="toastIcon" aria-hidden="true" id="toastIcon"></div>
+      <div style="min-width:0">
+        <div class="toastTitle" id="toastTitle">Trophy earned</div>
+        <div class="toastDesc" id="toastDesc">…</div>
+      </div>
+      <div class="toastTier" id="toastTier">Bronze</div>
+    </div>
+  </div>
+
+  <div class="modalOverlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <div class="modalHead">
+        <h3 id="modalTitle">Import data</h3>
+        <div class="small">Paste JSON • <span class="kbd">Esc</span> to close</div>
+      </div>
+      <div class="modalBody">
+        <textarea id="importBox" placeholder='Paste your exported JSON here...' style="min-height:220px"></textarea>
+      </div>
+      <div class="modalFoot">
+        <button class="btn" id="btnCloseModal">Close</button>
+        <button class="btn primary" id="btnDoImport">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modalOverlay" id="manageOverlay" role="dialog" aria-modal="true" aria-labelledby="manageTitle">
+    <div class="modal">
+      <div class="modalHead">
+        <h3 id="manageTitle">Manage Goals & Trophies</h3>
+        <div class="small">Everything saves locally • <span class="kbd">Esc</span> to close</div>
+      </div>
+      <div class="modalBody">
+        <div class="manageGrid">
+          <div class="miniCard">
+            <div class="row" style="align-items:flex-end">
+              <div class="field" style="min-width:220px">
+                <label for="mgGoalTitle">New goal name</label>
+                <input id="mgGoalTitle" type="text" placeholder="e.g. Reading" />
+              </div>
+              <div class="field" style="min-width:260px">
+                <label for="mgGoalHint">Goal hint (optional)</label>
+                <input id="mgGoalHint" type="text" placeholder="e.g. Pages, books, deep focus." />
+              </div>
+              <button class="btn primary" id="mgAddGoal" style="flex:0 0 auto">Add goal</button>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="field">
+              <label for="mgSelectGoal">Selected goal</label>
+              <select id="mgSelectGoal"></select>
+            </div>
+
+            <div class="row" style="margin-top:10px">
+              <div class="field">
+                <label for="mgEditGoalName">Edit goal name</label>
+                <input id="mgEditGoalName" type="text" />
+              </div>
+              <div class="field">
+                <label for="mgEditGoalHint">Edit goal hint</label>
+                <input id="mgEditGoalHint" type="text" />
+              </div>
+            </div>
+
+            <div class="row" style="margin-top:10px">
+              <button class="btn" id="mgSaveGoalEdits">Save goal edits</button>
+              <button class="btn danger" id="mgDeleteGoal">Delete goal</button>
+            </div>
+
+            <div class="small" style="margin-top:10px">
+              Deleting a goal removes its trophies and unlock history for that goal.
+            </div>
+          </div>
+
+          <div class="miniCard">
+            <div class="row" style="align-items:flex-end">
+              <div class="field" style="min-width:220px">
+                <label for="mgTTitle">Trophy title</label>
+                <input id="mgTTitle" type="text" placeholder="e.g. First chapter" />
+              </div>
+              <div class="field" style="min-width:160px">
+                <label for="mgTTier">Tier</label>
+                <select id="mgTTier">
+                  <option value="bronze">Bronze</option>
+                  <option value="silver">Silver</option>
+                  <option value="gold">Gold</option>
+                  <option value="platinum">Platinum</option>
+                </select>
+              </div>
+              <div class="field" style="min-width:160px">
+                <label for="mgTHidden">Hidden?</label>
+                <select id="mgTHidden">
+                  <option value="false">No</option>
+                  <option value="true">Yes</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field" style="margin-top:10px">
+              <label for="mgTDesc">Description</label>
+              <input id="mgTDesc" type="text" placeholder="What do you need to do?" />
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="row" style="align-items:flex-end">
+              <div class="field" style="min-width:180px">
+                <label for="mgRuleKind">Auto rule (optional)</label>
+                <select id="mgRuleKind">
+                  <option value="none">None (manual only)</option>
+                  <option value="count">Count actions ≥ N</option>
+                  <option value="sumAtLeast">Sum actions ≥ N</option>
+                </select>
+              </div>
+              <div class="field" style="min-width:220px">
+                <label for="mgRuleType">Action type (e.g. workout)</label>
+                <input id="mgRuleType" type="text" placeholder="workout" />
+              </div>
+              <div class="field" style="min-width:160px">
+                <label for="mgRuleValue">N</label>
+                <input id="mgRuleValue" type="number" min="1" step="1" value="1" />
+              </div>
+              <button class="btn primary" id="mgAddTrophy" style="flex:0 0 auto">Add trophy</button>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="row" style="align-items:center; justify-content:space-between">
+              <div class="small">
+                Tip: you usually want <b>one Platinum</b> per goal (auto-awarded when others are done).
+              </div>
+              <div class="small" id="mgPlatWarning" style="display:none">
+                <span class="chip pillWarn">This goal already has a Platinum</span>
+              </div>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="small"><b>Trophies in selected goal</b></div>
+            <div class="list" id="mgTrophyList"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modalFoot">
+        <button class="btn" id="mgClose">Close</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const LS_KEY = "goal_trophies_v2";
+
+  const TROPHY_ICONS = {
+    bronze: "Bronze Trophy.png",
+    silver: "Silver Trophy.png",
+    gold: "Gold Trophy.png",
+    platinum: "Platinum Trophy.png"
+  };
+
+  const $ = (sel, root=document) => root.querySelector(sel);
+
+  const nowISO = () => new Date().toISOString();
+  const fmtDate = (iso) => {
+    try{
+      const d = new Date(iso);
+      return d.toLocaleString(undefined, {year:"numeric", month:"short", day:"2-digit"});
+    }catch{ return ""; }
+  };
+  const cap = (s) => (s||"").charAt(0).toUpperCase() + (s||"").slice(1);
+  const uid = (prefix="id") => prefix + "_" + Math.random().toString(36).slice(2,8) + "_" + Date.now().toString(36);
+
+  const TIER_ORDER = { bronze:1, silver:2, gold:3, platinum:4 };
+
+  function iconSrc(tier){
+    return encodeURI(TROPHY_ICONS[tier] || TROPHY_ICONS.bronze);
+  }
+
+  function demoState(){
+    return {
+      version: 2,
+      settings: { sound: false },
+      selectedGoalId: "fitness",
+      actions: [],
+      goals: [
+        {
+          id: "fitness",
+          title: "Fitness",
+          hint: "Show up, build consistency, hit a milestone, then complete the line.",
+          trophies: [
+            t("fit_1", "First session", "bronze", "Do any workout session.", false, ruleCount("workout", 1)),
+            t("fit_2", "Back again", "bronze", "Complete 3 workout sessions.", false, ruleCount("workout", 3)),
+            t("fit_3", "One full week", "silver", "Log 7 workout sessions total.", false, ruleCount("workout", 7)),
+            t("fit_4", "Cardio milestone", "gold", "Run or walk 5km (log it once).", false, ruleCount("fivek", 1)),
+            t("fit_5", "Platinum — Program complete", "platinum", "Complete every Fitness trophy.", true, null)
+          ]
+        },
+        {
+          id: "savings",
+          title: "Savings",
+          hint: "Tiny wins, then bigger milestones. No judgement—just progress.",
+          trophies: [
+            t("sav_1", "First deposit", "bronze", "Put money aside once (log deposit).", false, ruleCount("deposit", 1)),
+            t("sav_2", "Consistency", "silver", "Make 8 deposits total.", false, ruleCount("deposit", 8)),
+            t("sav_3", "Four figures", "gold", "Log $1,000+ of deposits in total.", false, ruleSumAtLeast("deposit", 1000)),
+            t("sav_4", "Hidden win", "silver", "A surprise milestone you’ll recognise when it happens.", true, null),
+            t("sav_5", "Platinum — Saver mode", "platinum", "Complete every Savings trophy.", true, null)
+          ]
+        }
+      ]
+    };
+  }
+
+  function t(id, title, tier, desc, hidden, rule){
+    return { id, title, tier, desc, hidden: !!hidden, rule: rule || null, unlocked:false, unlockedAt:null, unlockMethod:null };
+  }
+  function ruleCount(type, count){ return { kind:"count", type, count }; }
+  function ruleSumAtLeast(type, sum){ return { kind:"sumAtLeast", type, sum }; }
+
+  function computeActionsCount(actions, type){
+    let c = 0;
+    for(const a of actions) if(a.type === type) c += (Number(a.value) || 1);
+    return c;
+  }
+  function computeActionsSum(actions, type){
+    let s = 0;
+    for(const a of actions) if(a.type === type) s += (Number(a.value) || 0);
+    return s;
+  }
+  function evaluateRule(rule, actions){
+    if(!rule) return false;
+    if(rule.kind === "count") return computeActionsCount(actions, rule.type) >= Number(rule.count || 0);
+    if(rule.kind === "sumAtLeast") return computeActionsSum(actions, rule.type) >= Number(rule.sum || 0);
+    return false;
+  }
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(LS_KEY);
+      if(!raw) return demoState();
+      const parsed = JSON.parse(raw);
+      if(!parsed || !Array.isArray(parsed.goals)) return demoState();
+      parsed.settings = parsed.settings || {sound:false};
+      parsed.actions = Array.isArray(parsed.actions) ? parsed.actions : [];
+      return parsed;
+    }catch{
+      return demoState();
+    }
+  }
+  function saveState(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+
+  let state = loadState();
+
+  const goalTabs = $("#goalTabs");
+  const trophyList = $("#trophyList");
+  const goalTitle = $("#goalTitle");
+  const goalHint = $("#goalHint");
+  const goalCompletion = $("#goalCompletion");
+  const goalCounts = $("#goalCounts");
+
+  const statUnlocked = $("#statUnlocked");
+  const statTotal = $("#statTotal");
+  const statPlat = $("#statPlat");
+  const statPct = $("#statPct");
+  const overallBar = $("#overallBar");
+
+  const viewMode = $("#viewMode");
+  const sortMode = $("#sortMode");
+  const searchBox = $("#searchBox");
+
+  const actionType = $("#actionType");
+  const actionValue = $("#actionValue");
+  const recentList = $("#recentList");
+
+  const toast = $("#toast");
+  const toastTitle = $("#toastTitle");
+  const toastDesc = $("#toastDesc");
+  const toastTier = $("#toastTier");
+  const toastIcon = $("#toastIcon");
+  const soundBadge = $("#soundBadge");
+
+  const btnToggleSound = $("#btnToggleSound");
+  const btnAddAction = $("#btnAddAction");
+  const btnQuick = $("#btnQuick1");          // ✅ fixed
+  const btnClearActions = $("#btnClearActions");
+
+  const btnExport = $("#btnExport");
+  const btnImport = $("#btnImport");
+  const btnDemo = $("#btnDemo");
+  const btnWipe = $("#btnWipe");
+
+  const modalOverlay = $("#modalOverlay");
+  const importBox = $("#importBox");
+  const btnCloseModal = $("#btnCloseModal");
+  const btnDoImport = $("#btnDoImport");
+
+  const btnManage = $("#btnManage");
+  const manageOverlay = $("#manageOverlay");
+  const mgClose = $("#mgClose");
+
+  const mgGoalTitle = $("#mgGoalTitle");
+  const mgGoalHint = $("#mgGoalHint");
+  const mgAddGoal = $("#mgAddGoal");
+
+  const mgSelectGoal = $("#mgSelectGoal");
+  const mgEditGoalName = $("#mgEditGoalName");
+  const mgEditGoalHint = $("#mgEditGoalHint");
+  const mgSaveGoalEdits = $("#mgSaveGoalEdits");
+  const mgDeleteGoal = $("#mgDeleteGoal");
+
+  const mgTTitle = $("#mgTTitle");
+  const mgTTier = $("#mgTTier");
+  const mgTHidden = $("#mgTHidden");
+  const mgTDesc = $("#mgTDesc");
+
+  const mgRuleKind = $("#mgRuleKind");
+  const mgRuleType = $("#mgRuleType");
+  const mgRuleValue = $("#mgRuleValue");
+  const mgAddTrophy = $("#mgAddTrophy");
+  const mgTrophyList = $("#mgTrophyList");
+  const mgPlatWarning = $("#mgPlatWarning");
+
+  let audioCtx = null;
+  function blip(){
+    if(!state.settings?.sound) return;
+    try{
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const t0 = audioCtx.currentTime;
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(660, t0);
+      o.frequency.exponentialRampToValueAtTime(990, t0 + 0.08);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.06, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.14);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t0);
+      o.stop(t0 + 0.16);
+    }catch{}
+  }
+
+  let toastTimer = null;
+  function showToast(trophy, goal){
+    toastTitle.textContent = "Trophy earned";
+    toastDesc.textContent = `${goal.title} • ${trophy.title}`;
+    toastTier.textContent = cap(trophy.tier);
+    toastIcon.innerHTML = `<img class="trophyImg" src="${iconSrc(trophy.tier)}" alt="${cap(trophy.tier)} trophy" />`;
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+    blip();
+  }
+
+  function getGoal(goalId){ return state.goals.find(g => g.id === goalId) || state.goals[0]; }
+  function allTrophies(){ return state.goals.flatMap(g => g.trophies.map(t => ({goal:g, trophy:t}))); }
+  function getSelectedGoal(){
+    if(!state.goals.length){
+      state.goals = [{ id:"default", title:"My Goal", hint:"Add trophies in Manage Goals.", trophies:[] }];
+    }
+    if(!state.selectedGoalId || !state.goals.some(g=>g.id===state.selectedGoalId)){
+      state.selectedGoalId = state.goals[0].id;
+    }
+    return getGoal(state.selectedGoalId);
+  }
+
+  function unlockTrophy(goalId, trophyId, method){
+    const goal = getGoal(goalId);
+    const tr = goal?.trophies.find(x => x.id === trophyId);
+    if(!tr || tr.unlocked) return false;
+    tr.unlocked = true;
+    tr.unlockedAt = nowISO();
+    tr.unlockMethod = method || "manual";
+    autoAwardGoalPlatinum(goal);
+    saveState();
+    showToast(tr, goal);
+    return true;
+  }
+
+  function resetTrophy(goalId, trophyId){
+    const goal = getGoal(goalId);
+    const tr = goal?.trophies.find(x => x.id === trophyId);
+    if(!tr) return false;
+
+    tr.unlocked = false;
+    tr.unlockedAt = null;
+    tr.unlockMethod = null;
+
+    const plat = goal.trophies.find(x => x.tier === "platinum");
+    if(plat){
+      plat.unlocked = false;
+      plat.unlockedAt = null;
+      plat.unlockMethod = null;
+    }
+    saveState();
+    return true;
+  }
+
+  function autoAwardGoalPlatinum(goal){
+    const plat = goal.trophies.find(x => x.tier === "platinum");
+    if(!plat) return;
+    const nonPlat = goal.trophies.filter(t => t.tier !== "platinum");
+    const done = nonPlat.length > 0 && nonPlat.every(t => t.unlocked);
+    if(done && !plat.unlocked){
+      plat.unlocked = true;
+      plat.unlockedAt = nowISO();
+      plat.unlockMethod = "auto";
+      saveState();
+      showToast(plat, goal);
+    }
+  }
+
+  function runAutoUnlocks(){
+    let unlockedAny = false;
+    for(const g of state.goals){
+      for(const t of g.trophies){
+        if(t.unlocked) continue;
+        if(t.tier === "platinum") continue;
+        if(!t.rule) continue;
+        if(evaluateRule(t.rule, state.actions)){
+          t.unlocked = true;
+          t.unlockedAt = nowISO();
+          t.unlockMethod = "auto";
+          unlockedAny = true;
+          showToast(t, g);
+        }
+      }
+      autoAwardGoalPlatinum(g);
+    }
+    if(unlockedAny) saveState();
+  }
+
+  function openManage(){
+    manageOverlay.classList.add("show");
+    renderManageGoalSelect();
+    renderManageGoalEdits();
+    renderManageTrophyList();
+    updatePlatWarning();
+    setTimeout(()=>mgGoalTitle.focus(), 20);
+  }
+  function closeManage(){ manageOverlay.classList.remove("show"); }
+
+  function renderManageGoalSelect(){
+    mgSelectGoal.innerHTML = "";
+    const sel = getSelectedGoal();
+    for(const g of state.goals){
+      const opt = document.createElement("option");
+      opt.value = g.id;
+      opt.textContent = g.title;
+      mgSelectGoal.appendChild(opt);
+    }
+    mgSelectGoal.value = sel.id;
+  }
+  function renderManageGoalEdits(){
+    const g = getSelectedGoal();
+    mgEditGoalName.value = g.title || "";
+    mgEditGoalHint.value = g.hint || "";
+  }
+  function updatePlatWarning(){
+    const g = getSelectedGoal();
+    mgPlatWarning.style.display = g.trophies.some(t => t.tier === "platinum") ? "" : "none";
+  }
+
+  function addGoal(title, hint){
+    const cleanTitle = (title||"").trim();
+    if(!cleanTitle){ alert("Goal name can’t be empty."); return; }
+    const id = uid("goal");
+    state.goals.push({ id, title: cleanTitle, hint:(hint||"").trim(), trophies:[] });
+    state.selectedGoalId = id;
+    saveState();
+    runAutoUnlocks();
+    render();
+    renderManageGoalSelect();
+    renderManageGoalEdits();
+    renderManageTrophyList();
+    updatePlatWarning();
+  }
+
+  function deleteGoal(goalId){
+    if(state.goals.length <= 1){ alert("You need at least one goal."); return; }
+    const g = getGoal(goalId);
+    if(!confirm(`Delete goal "${g.title}" and all its trophies?`)) return;
+    state.goals = state.goals.filter(x => x.id !== goalId);
+    if(!state.goals.some(x=>x.id===state.selectedGoalId)) state.selectedGoalId = state.goals[0].id;
+    saveState();
+    render();
+    renderManageGoalSelect();
+    renderManageGoalEdits();
+    renderManageTrophyList();
+    updatePlatWarning();
+  }
+
+  function saveGoalEdits(){
+    const g = getSelectedGoal();
+    const name = (mgEditGoalName.value||"").trim();
+    if(!name){ alert("Goal name can’t be empty."); return; }
+    g.title = name;
+    g.hint = (mgEditGoalHint.value||"").trim();
+    saveState();
+    render();
+    renderManageGoalSelect();
+    updatePlatWarning();
+  }
+
+  function makeRuleFromManageInputs(){
+    const kind = mgRuleKind.value;
+    if(kind === "none") return null;
+    const type = (mgRuleType.value||"").trim();
+    const n = Number(mgRuleValue.value || 1);
+    if(!type){ alert("If you set an auto rule, action type can’t be empty (e.g. workout)."); return null; }
+    if(!isFinite(n) || n < 1){ alert("Rule N must be 1 or higher."); return null; }
+    if(kind === "count") return ruleCount(type, Math.floor(n));
+    if(kind === "sumAtLeast") return ruleSumAtLeast(type, n);
+    return null;
+  }
+
+  function addTrophyToSelectedGoal(){
+    const g = getSelectedGoal();
+    const title = (mgTTitle.value||"").trim();
+    const desc  = (mgTDesc.value||"").trim();
+    const tier  = mgTTier.value;
+    const hidden = mgTHidden.value === "true";
+
+    if(!title){ alert("Trophy title can’t be empty."); return; }
+    if(!desc){ alert("Trophy description can’t be empty."); return; }
+
+    if(tier === "platinum" && g.trophies.some(t => t.tier === "platinum")){
+      if(!confirm("This goal already has a Platinum trophy. Add another anyway?")) return;
+    }
+
+    const rule = makeRuleFromManageInputs();
+    if(mgRuleKind.value !== "none" && !rule) return;
+
+    g.trophies.push(t(uid("trophy"), title, tier, desc, hidden, rule));
+
+    mgTTitle.value = "";
+    mgTDesc.value = "";
+    mgTTier.value = "bronze";
+    mgTHidden.value = "false";
+    mgRuleKind.value = "none";
+    mgRuleType.value = "";
+    mgRuleValue.value = "1";
+
+    saveState();
+    runAutoUnlocks();
+    render();
+    renderManageTrophyList();
+    updatePlatWarning();
+    renderActionTypes();
+  }
+
+  function deleteTrophy(goalId, trophyId){
+    const g = getGoal(goalId);
+    const tr = g.trophies.find(x=>x.id===trophyId);
+    if(!confirm(`Delete trophy "${tr?.title || "?"}"?`)) return;
+
+    g.trophies = g.trophies.filter(x => x.id !== trophyId);
+
+    const plat = g.trophies.find(x => x.tier === "platinum");
+    if(plat){
+      const nonPlat = g.trophies.filter(t => t.tier !== "platinum");
+      const done = nonPlat.length > 0 && nonPlat.every(t => t.unlocked);
+      if(!done){
+        plat.unlocked = false;
+        plat.unlockedAt = null;
+        plat.unlockMethod = null;
+      }
+    }
+
+    saveState();
+    render();
+    renderManageTrophyList();
+    updatePlatWarning();
+    renderActionTypes();
+  }
+
+  function editTrophy(goalId, trophyId){
+    const g = getGoal(goalId);
+    const tr = g.trophies.find(x=>x.id===trophyId);
+    if(!tr) return;
+
+    const newTitle = prompt("Edit trophy title:", tr.title);
+    if(newTitle === null) return;
+    const title = newTitle.trim();
+    if(!title){ alert("Title can’t be empty."); return; }
+
+    const newDesc = prompt("Edit description:", tr.desc);
+    if(newDesc === null) return;
+    const desc = newDesc.trim();
+    if(!desc){ alert("Description can’t be empty."); return; }
+
+    tr.title = title;
+    tr.desc = desc;
+
+    saveState();
+    render();
+    renderManageTrophyList();
+  }
+
+  function renderManageTrophyList(){
+    const g = getSelectedGoal();
+    mgTrophyList.innerHTML = "";
+
+    if(!g.trophies.length){
+      const d = document.createElement("div");
+      d.className = "small";
+      d.textContent = "No trophies yet — add one above.";
+      mgTrophyList.appendChild(d);
+      return;
+    }
+
+    const list = g.trophies.slice().sort((a,b)=>{
+      const da = TIER_ORDER[a.tier] - TIER_ORDER[b.tier];
+      if(da!==0) return da;
+      return (a.title||"").localeCompare(b.title||"");
+    });
+
+    for(const tr of list){
+      const ruleLabel = tr.rule
+        ? (tr.rule.kind === "count"
+            ? `Auto: ${tr.rule.type} count ≥ ${tr.rule.count}`
+            : `Auto: ${tr.rule.type} sum ≥ ${tr.rule.sum}`)
+        : "Manual only";
+
+      const item = document.createElement("div");
+      item.className = "listItem";
+      item.innerHTML = `
+        <div class="meta">
+          <div class="title">
+            ${escapeHtml(tr.title)}
+            <span class="chip">${cap(tr.tier)}</span>
+            ${tr.hidden ? `<span class="chip">Hidden</span>` : ``}
+            ${tr.unlocked ? `<span class="chip">Unlocked</span>` : ``}
+          </div>
+          <div class="subline">${escapeHtml(tr.desc)}</div>
+          <div class="subline">${escapeHtml(ruleLabel)}</div>
+        </div>
+        <div class="actions">
+          <button class="btn ghost" data-act="edit">Edit</button>
+          <button class="btn danger" data-act="del">Delete</button>
+        </div>
+      `;
+      item.querySelector('[data-act="edit"]').addEventListener("click", ()=>editTrophy(g.id, tr.id));
+      item.querySelector('[data-act="del"]').addEventListener("click", ()=>deleteTrophy(g.id, tr.id));
+      mgTrophyList.appendChild(item);
+    }
+  }
+
+  function render(){
+    renderGoalTabs();
+    renderActionTypes();
+    renderGoalPanel();
+    renderStats();
+    renderRecent();
+    renderSoundBadge();
+  }
+
+  function renderGoalTabs(){
+    goalTabs.innerHTML = "";
+    const selected = getSelectedGoal();
+    for(const g of state.goals){
+      const total = g.trophies.length;
+      const unlocked = g.trophies.filter(t=>t.unlocked).length;
+
+      const b = document.createElement("button");
+      b.className = "tab" + (g.id === selected.id ? " active" : "");
+      b.type = "button";
+      b.innerHTML = `<span>${escapeHtml(g.title)}</span><span class="badge">${unlocked}/${total}</span>`;
+      b.addEventListener("click", () => {
+        state.selectedGoalId = g.id;
+        saveState();
+        renderGoalPanel();
+        if(manageOverlay.classList.contains("show")){
+          renderManageGoalSelect();
+          renderManageGoalEdits();
+          renderManageTrophyList();
+          updatePlatWarning();
+        }
+      });
+      goalTabs.appendChild(b);
+    }
+  }
+
+  function renderActionTypes(){
+    const types = new Set();
+    for(const g of state.goals){
+      for(const t of g.trophies){
+        if(t.rule?.type) types.add(t.rule.type);
+      }
+    }
+    const list = Array.from(types).sort((a,b)=>a.localeCompare(b));
+    actionType.innerHTML = "";
+    for(const tp of list){
+      const opt = document.createElement("option");
+      opt.value = tp;
+      opt.textContent = tp;
+      actionType.appendChild(opt);
+    }
+    if(!actionType.value && list.length) actionType.value = list[0];
+  }
+
+  function renderGoalPanel(){
+    const goal = getSelectedGoal();
+    goalTitle.textContent = goal.title + " — Trophies";
+    goalHint.textContent = goal.hint || "Trophies for this goal.";
+
+    const total = goal.trophies.length;
+    const unlocked = goal.trophies.filter(t => t.unlocked).length;
+    const pct = total ? Math.round((unlocked/total)*100) : 0;
+    goalCompletion.textContent = pct + "%";
+    goalCounts.textContent = `${unlocked} / ${total}`;
+
+    const view = viewMode.value;
+    const q = (searchBox.value || "").trim().toLowerCase();
+    let list = goal.trophies.slice();
+
+    if(view === "locked") list = list.filter(t => !t.unlocked);
+    if(view === "unlocked") list = list.filter(t => t.unlocked);
+
+    if(q){
+      list = list.filter(t => {
+        const title = (t.title||"").toLowerCase();
+        const desc = (t.desc||"").toLowerCase();
+        return title.includes(q) || desc.includes(q) || (t.tier||"").includes(q);
+      });
+    }
+
+    const sort = sortMode.value;
+    if(sort === "tier"){
+      list.sort((a,b) => (TIER_ORDER[a.tier] - TIER_ORDER[b.tier]) || (a.title||"").localeCompare(b.title||""));
+    } else if(sort === "title"){
+      list.sort((a,b) => (a.title||"").localeCompare(b.title||""));
+    } else if(sort === "recent"){
+      list.sort((a,b) => (Date.parse(b.unlockedAt||0) - Date.parse(a.unlockedAt||0)));
+    }
+
+    trophyList.innerHTML = "";
+    if(!list.length){
+      const d = document.createElement("div");
+      d.className = "small";
+      d.textContent = "No trophies match this view/search.";
+      trophyList.appendChild(d);
+      return;
+    }
+    for(const t0 of list) trophyList.appendChild(renderTrophy(goal, t0));
+  }
+
+  function renderTrophy(goal, trophy){
+    const el = document.createElement("div");
+    el.className = "trophy" + (trophy.unlocked ? "" : " locked");
+
+    const isHiddenLocked = trophy.hidden && !trophy.unlocked;
+    const title = isHiddenLocked ? "Hidden trophy" : trophy.title;
+    const desc = isHiddenLocked ? "Keep going — this will reveal when you unlock it." : trophy.desc;
+
+    const tags = [];
+    if(trophy.rule) tags.push(`<span class="tag auto">Auto</span>`);
+    if(trophy.hidden) tags.push(`<span class="tag hidden">Hidden</span>`);
+    if(trophy.unlocked && trophy.unlockMethod === "manual") tags.push(`<span class="tag manual">Manual</span>`);
+    if(trophy.unlocked && trophy.unlockedAt) tags.push(`<span class="tag date">${fmtDate(trophy.unlockedAt)}</span>`);
+
+    const tierLabel = cap(trophy.tier);
+
+    el.innerHTML = `
+      <div class="icon" aria-hidden="true" title="${tierLabel}">
+        <img class="trophyImg" src="${iconSrc(trophy.tier)}" alt="${tierLabel} trophy" />
+      </div>
+      <div class="tMain">
+        <div class="tTitle">
+          <span class="hiddenMask" title="${escapeAttr(title)}">${escapeHtml(title)}</span>
+          <span class="badge">${tierLabel}</span>
+        </div>
+        <div class="tDesc">${escapeHtml(desc)}</div>
+        <div class="tFoot">
+          <div class="tTags">${tags.join("")}</div>
+          <div class="toggle" title="Manually mark complete (or reset)">
+            <div class="check ${trophy.unlocked ? "on" : ""}" role="switch" aria-checked="${trophy.unlocked ? "true":"false"}"><div class="knob"></div></div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    el.querySelector(".check").addEventListener("click", () => {
+      if(!trophy.unlocked){
+        unlockTrophy(goal.id, trophy.id, "manual");
+      }else{
+        const ok = confirm(`Reset "${trophy.title}" to locked? This will also reset the goal's Platinum trophy (if any).`);
+        if(ok) resetTrophy(goal.id, trophy.id);
+      }
+      render();
+      if(manageOverlay.classList.contains("show")){
+        renderManageTrophyList();
+        updatePlatWarning();
+      }
+    });
+
+    return el;
+  }
+
+  function renderStats(){
+    const all = allTrophies();
+    const total = all.length;
+    const unlocked = all.filter(x => x.trophy.unlocked).length;
+    const plat = all.filter(x => x.trophy.tier === "platinum" && x.trophy.unlocked).length;
+    const pct = total ? Math.round((unlocked/total)*100) : 0;
+    statUnlocked.textContent = unlocked;
+    statTotal.textContent = total;
+    statPlat.textContent = plat;
+    statPct.textContent = pct + "%";
+    overallBar.style.width = pct + "%";
+  }
+
+  function renderRecent(){
+    const unlocked = allTrophies()
+      .filter(x => x.trophy.unlocked && x.trophy.unlockedAt)
+      .sort((a,b) => Date.parse(b.trophy.unlockedAt) - Date.parse(a.trophy.unlockedAt))
+      .slice(0, 6);
+
+    recentList.innerHTML = "";
+    if(unlocked.length === 0){
+      const d = document.createElement("div");
+      d.className = "small";
+      d.textContent = "No trophies unlocked yet. Tick one manually to start the streak.";
+      recentList.appendChild(d);
+      return;
+    }
+
+    for(const x of unlocked){
+      const t0 = x.trophy;
+      const g = x.goal;
+      const item = document.createElement("div");
+      item.className = "recentItem";
+      item.innerHTML = `
+        <div class="l">
+          <div class="t">${escapeHtml(t0.title)}</div>
+          <div class="d">${escapeHtml(g.title)} • ${escapeHtml(cap(t0.tier))}${t0.unlockMethod ? " • " + escapeHtml(cap(t0.unlockMethod)) : ""}</div>
+        </div>
+        <div class="r">${fmtDate(t0.unlockedAt)}</div>
+      `;
+      recentList.appendChild(item);
+    }
+  }
+
+  function renderSoundBadge(){
+    soundBadge.textContent = "Sound: " + (state.settings?.sound ? "On" : "Off");
+  }
+
+  function openImportModal(prefill, readOnly){
+    modalOverlay.classList.add("show");
+    importBox.value = prefill || "";
+    importBox.readOnly = !!readOnly;
+    btnDoImport.style.display = readOnly ? "none" : "";
+    $("#modalTitle").textContent = readOnly ? "Export data" : "Import data";
+    if(readOnly){
+      importBox.focus();
+      importBox.select();
+    }else{
+      setTimeout(()=>importBox.focus(), 20);
+    }
+  }
+  function closeModal(){
+    modalOverlay.classList.remove("show");
+    importBox.value = "";
+    importBox.readOnly = false;
+    btnDoImport.style.display = "";
+  }
+
+  function escapeHtml(str){
+    return String(str ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#39;");
+  }
+  function escapeAttr(str){
+    return String(str ?? "").replaceAll('"',"&quot;");
+  }
+
+  viewMode.addEventListener("change", renderGoalPanel);
+  sortMode.addEventListener("change", renderGoalPanel);
+  searchBox.addEventListener("input", renderGoalPanel);
+
+  btnToggleSound.addEventListener("click", () => {
+    state.settings = state.settings || {};
+    state.settings.sound = !state.settings.sound;
+    saveState();
+    renderSoundBadge();
+  });
+
+  btnAddAction.addEventListener("click", () => {
+    if(!actionType.value){
+      alert("No action types found yet. Add an auto-rule to a trophy (Manage Goals) or use manual ticking only.");
+      return;
+    }
+    const v = Number(actionValue.value || 1);
+    state.actions.push({ type: actionType.value, value: isFinite(v) ? v : 1, at: nowISO() });
+    saveState();
+    runAutoUnlocks();
+    render();
+  });
+
+  btnQuick.addEventListener("click", () => {
+    if(!actionType.value){
+      alert("No action types found yet. Add an auto-rule to a trophy (Manage Goals) or use manual ticking only.");
+      return;
+    }
+    state.actions.push({ type: actionType.value, value: 1, at: nowISO() });
+    saveState();
+    runAutoUnlocks();
+    render();
+  });
+
+  btnClearActions.addEventListener("click", () => {
+    if(!confirm("Clear all action history? (This won’t change already-unlocked trophies.)")) return;
+    state.actions = [];
+    saveState();
+    render();
+  });
+
+  btnExport.addEventListener("click", async () => {
+    try{
+      const txt = JSON.stringify(state, null, 2);
+      await navigator.clipboard.writeText(txt);
+      alert("Export copied to clipboard.");
+    }catch{
+      openImportModal(JSON.stringify(state, null, 2), true);
+    }
+  });
+
+  btnImport.addEventListener("click", () => openImportModal("", false));
+
+  btnDoImport.addEventListener("click", () => {
+    const raw = importBox.value.trim();
+    if(!raw){ alert("Paste JSON first."); return; }
+    try{
+      const parsed = JSON.parse(raw);
+      if(!parsed || !Array.isArray(parsed.goals)) throw new Error("Invalid format");
+      state = parsed;
+      state.settings = state.settings || {sound:false};
+      state.actions = Array.isArray(state.actions) ? state.actions : [];
+      saveState();
+      closeModal();
+      for(const g of state.goals) autoAwardGoalPlatinum(g);
+      saveState();
+      runAutoUnlocks();
+      render();
+      alert("Import complete.");
+    }catch{
+      alert("That JSON didn't look right. Please paste the full export.");
+    }
+  });
+
+  btnCloseModal.addEventListener("click", closeModal);
+  modalOverlay.addEventListener("click", (e) => { if(e.target === modalOverlay) closeModal(); });
+
+  btnDemo.addEventListener("click", () => {
+    if(!confirm("Reset everything to the demo dataset?")) return;
+    state = demoState();
+    saveState();
+    runAutoUnlocks();
+    render();
+  });
+
+  btnWipe.addEventListener("click", () => {
+    if(!confirm("Wipe ALL data? This cannot be undone.")) return;
+    localStorage.removeItem(LS_KEY);
+    state = demoState();
+    saveState();
+    runAutoUnlocks();
+    render();
+  });
+
+  btnManage.addEventListener("click", openManage);
+  mgClose.addEventListener("click", closeManage);
+  manageOverlay.addEventListener("click", (e)=>{ if(e.target === manageOverlay) closeManage(); });
+
+  mgAddGoal.addEventListener("click", ()=>{
+    addGoal(mgGoalTitle.value, mgGoalHint.value);
+    mgGoalTitle.value = "";
+    mgGoalHint.value = "";
+  });
+
+  mgSelectGoal.addEventListener("change", ()=>{
+    state.selectedGoalId = mgSelectGoal.value;
+    saveState();
+    render();
+    renderManageGoalSelect();
+    renderManageGoalEdits();
+    renderManageTrophyList();
+    updatePlatWarning();
+  });
+
+  mgSaveGoalEdits.addEventListener("click", saveGoalEdits);
+  mgDeleteGoal.addEventListener("click", ()=>deleteGoal(getSelectedGoal().id));
+  mgAddTrophy.addEventListener("click", addTrophyToSelectedGoal);
+
+  document.addEventListener("keydown", (e) => {
+    if(e.key !== "Escape") return;
+    if(manageOverlay.classList.contains("show")) closeManage();
+    if(modalOverlay.classList.contains("show")) closeModal();
+  });
+
+  runAutoUnlocks();
+  render();
+})();
+</script>
+</body>
+</html>
